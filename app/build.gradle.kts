@@ -286,6 +286,7 @@ dependencies {
     implementation(project(":lrclib"))
     implementation(project(":kizzy"))
     implementation(project(":lastfm"))
+    implementation(project(":listenbrainz"))
     implementation(project(":betterlyrics"))
     implementation(project(":shazamkit"))
     implementation(project(":spotify"))
