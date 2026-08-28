@@ -1,6 +1,5 @@
 plugins {
     id("com.android.library")
-    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -24,6 +23,7 @@ kotlin {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugaring)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)

@@ -16,15 +16,22 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.add
 
-@Serializable
 data class LbValidationResponse(
-    val code: Int = 0,
-    val message: String = "",
-    val valid: Boolean = false,
-    @kotlinx.serialization.SerialName("user_name") val userName: String? = null,
+    val code: Int,
+    val message: String,
+    val valid: Boolean,
+    val userName: String?,
 )
 
 object ListenBrainz {
@@ -56,9 +63,16 @@ object ListenBrainz {
         val resp = client.get("$BASE_URL/validate-token") {
             header(HttpHeaders.Authorization, "Token $token")
         }
-        val body: LbValidationResponse = resp.body()
-        require(body.valid) { "ListenBrainz token invalid: ${body.message}" }
-        body
+        val root = json.parseToJsonElement(resp.bodyAsText()).jsonObject
+        val valid = root["valid"]?.jsonPrimitive?.booleanOrNull ?: false
+        val response = LbValidationResponse(
+            code = root["code"]?.jsonPrimitive?.intOrNull ?: 0,
+            message = root["message"]?.jsonPrimitive?.contentOrNull ?: "",
+            valid = valid,
+            userName = root["user_name"]?.jsonPrimitive?.contentOrNull,
+        )
+        require(valid) { "ListenBrainz token invalid: ${response.message}" }
+        response
     }
 
     private suspend fun submitListen(
@@ -71,22 +85,24 @@ object ListenBrainz {
     ): Result<Unit> {
         val lbToken = token
         return runCatching {
-            val trackMetadata = buildMap<String, Any> {
+            val trackMetadata = buildJsonObject {
                 put("track_name", track)
                 put("artist_name", artist)
                 album?.takeIf { it.isNotBlank() }?.let { put("release_name", it) }
                 duration?.takeIf { it > 0 }?.let { put("duration", it * 1000) }
             }
-            val payload = buildMap<String, Any> {
+            val payload = buildJsonObject {
                 put("listen_type", listeningType)
                 put(
                     "payload",
-                    listOf(
-                        buildMap<String, Any> {
-                            put("track_metadata", trackMetadata)
-                            timestamp?.let { put("listened_at", it) }
-                        }
-                    )
+                    buildJsonArray {
+                        add(
+                            buildJsonObject {
+                                put("track_metadata", trackMetadata)
+                                timestamp?.let { put("listened_at", it) }
+                            }
+                        )
+                    }
                 )
             }
             val resp = client.post("$BASE_URL/submit-listens") {
