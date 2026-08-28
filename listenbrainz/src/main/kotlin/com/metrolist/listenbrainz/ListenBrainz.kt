@@ -32,6 +32,9 @@ object ListenBrainz {
     const val DEFAULT_SCROBBLE_DELAY_PERCENT = 0.5f
     const val DEFAULT_SCROBBLE_DELAY_SECONDS = 10
 
+    var token: String = ""
+    var enabled: Boolean = false
+
     private const val BASE_URL = "https://api.listenbrainz.org/1"
 
     private val json = Json {
@@ -49,10 +52,6 @@ object ListenBrainz {
         }
     }
 
-    /**
-     * Validate a user token.
-     * GET /1/validate-token
-     */
     suspend fun validateToken(token: String): Result<LbValidationResponse> = runCatching {
         val resp = client.get("$BASE_URL/validate-token") {
             header(HttpHeaders.Authorization, "Token $token")
@@ -62,45 +61,43 @@ object ListenBrainz {
         body
     }
 
-    /**
-     * Submit "playing_now" or a finished "single" listen.
-     * POST /1/submit-listens
-     */
-    suspend fun submitListen(
+    private suspend fun submitListen(
         artist: String,
         track: String,
-        album: String? = null,
-        duration: Int? = null,
-        timestamp: Long? = null,
+        album: String?,
+        duration: Int?,
+        timestamp: Long?,
         listeningType: String,
-    ): Result<Unit> = runCatching {
-        val trackMetadata = buildMap<String, Any> {
-            put("track_name", track)
-            put("artist_name", artist)
-            album?.takeIf { it.isNotBlank() }?.let { put("release_name", it) }
-            duration?.takeIf { it > 0 }?.let { put("duration", it * 1000) }
-        }
-        val payload = buildMap<String, Any> {
-            put("listen_type", listeningType)
-            put(
-                "payload",
-                listOf(
-                    buildMap<String, Any> {
-                        put("track_metadata", trackMetadata)
-                        timestamp?.let { put("listened_at", it) }
-                    }
+    ): Result<Unit> {
+        val lbToken = token
+        return runCatching {
+            val trackMetadata = buildMap<String, Any> {
+                put("track_name", track)
+                put("artist_name", artist)
+                album?.takeIf { it.isNotBlank() }?.let { put("release_name", it) }
+                duration?.takeIf { it > 0 }?.let { put("duration", it * 1000) }
+            }
+            val payload = buildMap<String, Any> {
+                put("listen_type", listeningType)
+                put(
+                    "payload",
+                    listOf(
+                        buildMap<String, Any> {
+                            put("track_metadata", trackMetadata)
+                            timestamp?.let { put("listened_at", it) }
+                        }
+                    )
                 )
-            )
-        }
-
-        val resp = client.post("$BASE_URL/submit-listens") {
-            header(HttpHeaders.Authorization, "Token $token")
-            contentType(ContentType.Application.Json)
-            setBody(payload)
-        }
-        if (!resp.status.isSuccess()) {
-            val err = resp.bodyAsText().take(200)
-            throw RuntimeException("ListenBrainz submit failed (${resp.status.value}): $err")
+            }
+            val resp = client.post("$BASE_URL/submit-listens") {
+                header(HttpHeaders.Authorization, "Token $lbToken")
+                contentType(ContentType.Application.Json)
+                setBody(payload)
+            }
+            if (!resp.status.isSuccess()) {
+                val err = resp.bodyAsText().take(200)
+                throw RuntimeException("ListenBrainz submit failed (${resp.status.value}): $err")
+            }
         }
     }
 
@@ -114,6 +111,7 @@ object ListenBrainz {
         track = track,
         album = album,
         duration = duration,
+        timestamp = null,
         listeningType = "playing_now",
     )
 
