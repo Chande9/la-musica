@@ -288,4 +288,6 @@
     <string name="enable_discord_rpc">Abilita Rich Presence</string>
     <string name="dismiss">Ignorare</string>
     <string name="action_login">Accedi</string>
+
+    <!-- Zona Grigia -->
 </resources>

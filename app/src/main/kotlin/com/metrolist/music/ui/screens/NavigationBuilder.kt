@@ -23,6 +23,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
+import com.metrolist.music.BuildConfig
 import com.metrolist.music.constants.DarkModeKey
 import com.metrolist.music.constants.PureBlackKey
 import com.metrolist.music.ui.screens.artist.ArtistAlbumsScreen
@@ -64,6 +65,7 @@ import com.metrolist.music.ui.screens.settings.UpdaterScreen
 import com.metrolist.music.ui.screens.settings.integrations.DiscordSettings
 import com.metrolist.music.ui.screens.settings.integrations.IntegrationScreen
 import com.metrolist.music.ui.screens.settings.integrations.LastFMSettings
+import com.metrolist.music.ui.screens.settings.integrations.ListenBrainzSettings
 import com.metrolist.music.ui.screens.settings.integrations.ListenTogetherSettings
 import com.metrolist.music.ui.screens.settings.integrations.SpotifyPreloadScreen
 import com.metrolist.music.ui.screens.settings.integrations.SpotifySettings
@@ -86,7 +88,7 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable(Screens.Search.route) { backStackEntry ->
-        val pureBlackEnabled by rememberPreference(PureBlackKey, defaultValue = false)
+        val pureBlackEnabled by rememberPreference(PureBlackKey, defaultValue = true)
         val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
         val isSystemInDarkTheme = isSystemInDarkTheme()
         val useDarkTheme =
@@ -404,6 +406,7 @@ fun NavGraphBuilder.navigationBuilder(
         PrivacySettings(navController)
     }
 
+
     composable("settings/backup_restore") {
         BackupAndRestore(navController)
     }
@@ -418,6 +421,10 @@ fun NavGraphBuilder.navigationBuilder(
 
     composable("settings/integrations/lastfm") {
         LastFMSettings(navController)
+    }
+
+    composable("settings/integrations/listenbrainz") {
+        ListenBrainzSettings(navController)
     }
 
     composable(route = "settings/integrations/listen_together") {

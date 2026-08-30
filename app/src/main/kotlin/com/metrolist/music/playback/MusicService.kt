@@ -82,6 +82,7 @@ import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.models.SongItem
 import com.metrolist.innertube.models.WatchEndpoint
 import com.metrolist.lastfm.LastFM
+import com.metrolist.music.BuildConfig
 import com.metrolist.music.MainActivity
 import com.metrolist.music.R
 import com.metrolist.music.constants.AndroidAutoTargetPlaylistKey
@@ -126,6 +127,9 @@ import com.metrolist.music.constants.DiscordTokenKey
 import com.metrolist.music.constants.DiscordUseDetailsKey
 import com.metrolist.music.constants.EnableDiscordRPCKey
 import com.metrolist.music.constants.EnableLastFMScrobblingKey
+import com.metrolist.music.constants.EnableListenBrainzScrobblingKey
+import com.metrolist.music.constants.ListenBrainzTokenKey
+import com.metrolist.music.constants.ListenBrainzUseNowPlaying
 import com.metrolist.music.constants.EnableSongCacheKey
 import com.metrolist.music.constants.PreCacheOnlyWifiKey
 import com.metrolist.music.constants.PreCacheTracksKey
@@ -175,6 +179,9 @@ import com.metrolist.music.di.DownloadCache
 import com.metrolist.music.di.PlayerCache
 import com.metrolist.music.eq.EqualizerService
 import com.metrolist.music.eq.audio.CustomEqualizerAudioProcessor
+import com.metrolist.music.eq.dsp.LoudnessGainProcessor
+import com.metrolist.music.eq.dsp.SoftClipLimiterProcessor
+import com.metrolist.music.eq.dsp.LoudnessState
 import com.metrolist.music.eq.data.EQProfileRepository
 import com.metrolist.music.extensions.SilentHandler
 import com.metrolist.music.extensions.tryOrNull
@@ -205,6 +212,7 @@ import com.metrolist.music.playback.queues.filterVideoSongs
 import com.metrolist.music.utils.CoilBitmapLoader
 import com.metrolist.music.utils.DiscordRPC
 import com.metrolist.music.utils.NetworkConnectivityObserver
+import com.metrolist.music.utils.LastFmScrobbleClient
 import com.metrolist.music.utils.ScrobbleManager
 import com.metrolist.music.utils.SyncUtils
 import com.metrolist.music.utils.Fix403
@@ -412,11 +420,13 @@ class MusicService :
     val playerFlow = _playerFlow.asStateFlow()
 
     private val playerSilenceProcessors = HashMap<Player, SilenceDetectorAudioProcessor>()
+    private val playerLoudnessProcessors = HashMap<Player, LoudnessGainProcessor>()
 
     private val instantSilenceSkipEnabled = MutableStateFlow(false)
 
     private var isAudioEffectSessionOpened = false
     private var loudnessEnhancer: LoudnessEnhancer? = null
+    private val loudnessController = com.metrolist.music.eq.dsp.LoudnessController()
 
     private var discordRpc: DiscordRPC? = null
     private var lastPlaybackSpeed = 1.0f
@@ -972,7 +982,10 @@ class MusicService :
             }
 
         dataStore.data
-            .map { it[EnableLastFMScrobblingKey] ?: false }
+            .map { prefs ->
+                (prefs[EnableLastFMScrobblingKey] ?: false) ||
+                    (prefs[EnableListenBrainzScrobblingKey] ?: false)
+            }
             .debounce(300)
             .distinctUntilChanged()
             .collect(scope) { enabled ->
@@ -981,15 +994,31 @@ class MusicService :
                     val minSongDuration =
                         dataStore.get(ScrobbleMinSongDurationKey, LastFM.DEFAULT_SCROBBLE_MIN_SONG_DURATION)
                     val delaySeconds = dataStore.get(ScrobbleDelaySecondsKey, LastFM.DEFAULT_SCROBBLE_DELAY_SECONDS)
+                    // Provider selection: LB si está activado (con token), si no LastFM
+                    val lbEnabled = dataStore.get(EnableListenBrainzScrobblingKey, false)
+                    val lbToken = dataStore.get(ListenBrainzTokenKey, "")
+                    val client =
+                        if (lbEnabled && lbToken.isNotBlank()) {
+                            com.metrolist.listenbrainz.ListenBrainz.token = lbToken
+                            LastFmScrobbleClient.ListenBrainzClient
+                        } else {
+                            LastFmScrobbleClient.Default
+                        }
                     val manager =
                         ScrobbleManager(
                             scope,
                             minSongDuration = minSongDuration,
                             scrobbleDelayPercent = delayPercent,
                             scrobbleDelaySeconds = delaySeconds,
+                            client = client,
                         )
                     scrobbleManager = manager
-                    manager.useNowPlaying = dataStore.get(LastFMUseNowPlaying, false)
+                    manager.useNowPlaying =
+                        if (lbEnabled && lbToken.isNotBlank()) {
+                            dataStore.get(ListenBrainzUseNowPlaying, false)
+                        } else {
+                            dataStore.get(LastFMUseNowPlaying, false)
+                        }
                     if (::player.isInitialized && player.isPlaying) {
                         manager.onSongStart(player.currentMetadata, duration = player.duration)
                     }
@@ -1159,6 +1188,13 @@ class MusicService :
         val eqProcessor = CustomEqualizerAudioProcessor()
         equalizerService.addAudioProcessor(eqProcessor)
 
+        // DSP loudness chain (ported from Stash, GPL-3.0): per-track makeup gain with
+        // 15ms anti-click ramp + true-peak soft-clip limiter guarding any boost.
+        val loudnessProcessor = LoudnessGainProcessor(loudnessController)
+        val limiterProcessor = SoftClipLimiterProcessor(
+            isNeeded = { loudnessController.state.value.enabled && loudnessController.state.value.currentTrackGainDb > 0f },
+        )
+
         val silenceProcessor = SilenceDetectorAudioProcessor { handleLongSilenceDetected() }
 
         // Set initial state. `dataStore.get(key, default)` is already synchronous (it
@@ -1172,7 +1208,7 @@ class MusicService :
             ExoPlayer
                 .Builder(this)
                 .setMediaSourceFactory(createMediaSourceFactory())
-                .setRenderersFactory(createRenderersFactory(eqProcessor, silenceProcessor))
+                .setRenderersFactory(createRenderersFactory(eqProcessor, silenceProcessor, loudnessProcessor, limiterProcessor))
                 .setHandleAudioBecomingNoisy(true)
                 .setWakeMode(C.WAKE_MODE_NETWORK)
                 .setAudioAttributes(
@@ -1188,6 +1224,7 @@ class MusicService :
                 .build()
 
         playerSilenceProcessors[player] = silenceProcessor
+        playerLoudnessProcessors[player] = loudnessProcessor
 
         player.apply {
             val offload = dataStore.get(AudioOffload, false)
@@ -2180,6 +2217,12 @@ class MusicService :
                     withContext(Dispatchers.Main) {
                         if (loudness != null) {
                             val loudnessDb = loudness.toFloat()
+                            // Stash-style DSP path: feed the in-pipeline gain processor
+                            // (15ms anti-click ramp + true-peak soft-clip limiter downstream).
+                            val trackGainDb = (-loudnessDb).coerceIn(-12f, 12f)
+                            loudnessController.setEnabled(true)
+                            loudnessController.setTrackGainDb(trackGainDb)
+                            Timber.tag(TAG).d("DSP loudness gain applied: %.2f dB".format(trackGainDb))
                             val targetGain = (-loudnessDb * 100).toInt()
                             val clampedGain = targetGain.coerceIn(MIN_GAIN_MB, MAX_GAIN_MB)
 
@@ -2188,9 +2231,9 @@ class MusicService :
                                 .d("Calculated raw normalization gain: $targetGain mB (from loudness: $loudnessDb)")
 
                             try {
-                                loudnessEnhancer?.setTargetGain(clampedGain)
-                                loudnessEnhancer?.enabled = true
-                                Timber.tag(TAG).i("LoudnessEnhancer gain applied: $clampedGain mB")
+                                // DSP chain owns the gain now; framework enhancer stays OFF
+                                loudnessEnhancer?.enabled = false
+                                Timber.tag(TAG).i("DSP loudness chain active; framework enhancer off")
                             } catch (e: Exception) {
                                 Timber.tag(TAG).e(e, "Failed to apply loudness enhancement")
                                 reportException(e)
@@ -4086,6 +4129,8 @@ class MusicService :
     private fun createRenderersFactory(
         eqProcessor: CustomEqualizerAudioProcessor,
         silenceProcessor: SilenceDetectorAudioProcessor,
+        loudnessProcessor: LoudnessGainProcessor,
+        limiterProcessor: SoftClipLimiterProcessor,
     ) = object : DefaultRenderersFactory(this) {
         override fun buildAudioSink(
             context: Context,
@@ -4101,6 +4146,8 @@ class MusicService :
                     arrayOf(
                         eqProcessor,
                         silenceProcessor,
+                        loudnessProcessor,
+                        limiterProcessor,
                     ),
                     SilenceSkippingAudioProcessor(2_000_000, 20_000, 256),
                     SonicAudioProcessor(),

@@ -1,259 +1,50 @@
 <div align="center">
 <img src="fastlane/metadata/android/en-US/images/icon.png" width="160" height="160" style="display: block; margin: 0 auto"/>
-<h1>Meld</h1>
-<p>A music client that fuses Spotify and YouTube Music into one seamless experience</p>
+<h1>La Musica</h1>
+<p><strong>Music, but ours.</strong> A Spotify + YouTube Music client that respects your ears and your freedom.</p>
 
-[![Latest release](https://img.shields.io/github/v/release/FrancescoGrazioso/Meld?style=for-the-badge)](https://github.com/FrancescoGrazioso/Meld/releases/latest)
-[![GitHub license](https://img.shields.io/github/license/FrancescoGrazioso/Meld?style=for-the-badge)](https://github.com/FrancescoGrazioso/Meld/blob/main/LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/FrancescoGrazioso/Meld/total?style=for-the-badge)](https://github.com/FrancescoGrazioso/Meld/releases)
-
+[![GitHub license](https://img.shields.io/badge/license-GPL--3.0-blue?style=for-the-badge)](LICENSE)
+[![API](https://img.shields.io/badge/Spotify%20API-free-green?style=for-the-badge)](#spotify-api)
+[![Platform](https://img.shields.io/badge/platform-Android-3DDC84?style=for-the-badge)](#)
 </div>
 
-## What is Meld?
+---
 
-**Meld** is an Android music client that brings together the best of Spotify and YouTube Music. It uses your Spotify account to power personalized recommendations, search, and home content — while streaming audio through YouTube Music.
+**La Musica** is a fork of [Meld](https://github.com/FrancescoGrazioso/Meld) maintained with one goal: make it the best possible *daily-driver* music app — fast, honest, and fully under the user's control. No trackers, no dark patterns, no features you didn't ask for.
 
-The name "Meld" reflects the core idea: **melding** two music platforms into a single, unified listening experience.
+## What's different from Meld
 
-### Why Meld?
+- 🎚️ **Ported DSP chain**: loudness-normalized gain with anti-click ramping and a true-peak soft-clip limiter, so volume normalization sounds clean instead of crushed
+- 🖤 **pureBlack OLED theme** as default — real black, real battery savings on AMOLED
+- 🧠 **ListenBrainz scrobbling** wired end-to-end (token injection, provider selection, settings UI)
+- 🛠️ Maintenance-first: upstream syncs, build fixes, and a strict no-bloat policy
 
-- **Spotify's personalization** — Your top tracks, favorite artists, and curated playlists from Spotify drive the recommendations
-- **YouTube Music's catalog** — Access YouTube Music's vast library for streaming, including rare tracks, live performances, and remixes
-- **No setup required** — Just log in with your Spotify account directly in the app. No developer dashboard, no Client ID, no extra steps
-- **No Spotify Premium required** — Meld uses Spotify's data APIs (not streaming), so a free Spotify account is all you need
-- **Built-in recommendation engine** — A custom algorithm builds personalized queues using your Spotify listening history, without relying on deprecated API endpoints
+## Principles
 
-## Features
+1. **Honesty over hype** — every feature does what it says, nothing phones home
+2. **User control** — every optional behavior has a switch, defaults are conservative
+3. **Quality of life** — the app must feel better than the official clients, not just different
 
-### Spotify Integration
-- **Spotify as search source** — Search results powered by Spotify, with automatic YouTube Music matching for playback
-- **Spotify as home source** — Home screen populated with your Spotify top tracks, top artists, playlists, and new releases
-- **Spotify-only mode** — Option to hide all YouTube-based content and show exclusively Spotify-powered sections on the home screen
-- **Smart queue generation** — Custom recommendation engine that builds radio-like queues from your Spotify taste profile (top tracks/artists across 3 time ranges, genre similarity, popularity matching)
-- **Spotify library sync** — Access your Spotify playlists and liked songs directly in the app
-- **Spotify-to-YouTube matching** — Fuzzy matching algorithm with local caching for fast, accurate track resolution
-- **Manual match override** — If a Spotify track is matched to the wrong YouTube video, you can manually fix it by pasting the correct YouTube link. The override is saved permanently and takes priority over automatic matching
-- **Spotify album browsing** — Dedicated album screen for Spotify albums with full tracklist, metadata, and one-tap playback
-- **Hybrid profile cache** — 3-tier data strategy (GraphQL → REST API → local DB) with persistent caching for instant home screen loading on app restart, automatic rate-limit handling, and parallel artist image enrichment
-- **Artist navigation** — Tap any Spotify artist on the home screen to navigate directly to their YouTube Music artist page
+## Spotify API
 
-### Lossless Audio (Experimental)
-- **Qobuz backend** — Optional FLAC and Hi-Res (up to 24-bit / 192 kHz) streaming via the Qobuz catalog, replacing YouTube Music's lossy audio
-- **Deterministic matching** — Uses ISRC (the universal track identifier shared by Spotify and Qobuz) so Spotify-sourced tracks resolve to their exact Qobuz counterpart without ambiguity
-- **Persistent match cache** — Once a track has been resolved on Qobuz, the match is saved locally so subsequent plays skip the search step entirely
-- **Multi-backend fallback** — Three independent Qobuz resolvers (Monokenny, Jumo, Squid) are tried in sequence if the primary one is rate-limited or unavailable
-- **Quality tiers** — Choose between AAC 320 kbps, CD quality (16-bit / 44.1 kHz), or Hi-Res (up to 24-bit / 192 kHz) per your preference and connection
-- **Automatic YouTube fallback** — If a track isn't on Qobuz, or all resolvers fail, playback falls back silently to the standard YouTube Music stream — no error, no skip
-- **Hidden behind a toggle** — Disabled by default; opt-in from the Spotify integration settings
+This app uses the free [Spotify Web API](https://developer.spotify.com/documentation/web-api) for metadata. You can plug in your own credentials — see the in-app settings.
 
-### Core Music Features
-- Play any song or video from YouTube Music
-- Background playback
-- Personalized quick picks
-- Library management
-- Listen together with friends
-- Download and cache songs for offline playback
-- Search for songs, albums, artists, videos and playlists
-- Live lyrics
-- YouTube Music account login support
-- Syncing of songs, artists, albums and playlists, from and to your account
-- Skip silence
-- Import playlists
-- Audio normalization
-- Adjust tempo/pitch
-- Local playlist management
-- Reorder songs in playlist or queue
-- Home screen widget with playback controls
-- Light / Dark / Black / Dynamic theme
-- Sleep timer
-- Material 3 design
-- Discord Rich Presence
+## Building
 
-## Download
+```bash
+git clone https://github.com/Chande9/la-musica.git
+cd la-musica
+./gradlew assembleFossDebug
+```
 
-<div align="center">
-<a href="https://github.com/FrancescoGrazioso/Meld/releases/latest/download/Meld.apk"><img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Get it on GitHub" height="82"></a>
-</div>
-
-> **First time here?** Tap the badge above or go to the [Releases page](https://github.com/FrancescoGrazioso/Meld/releases), then download the **Meld.apk** file and open it on your Android device. You may need to allow installation from unknown sources in your phone's settings.
-
-<div align="center">
-
-**Enjoying Meld?** Consider supporting the project
-
-<a href="https://buymeacoffee.com/francescogm"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
-
-</div>
-
-## How the Spotify Integration Works
-
-Meld connects to your Spotify account through a built-in WebView login — no developer setup or Client ID required. Here's what happens under the hood:
-
-1. **Authentication** — You log in with your regular Spotify credentials (email, Google, Facebook, or Apple) directly inside the app. Meld extracts session cookies and generates access tokens using TOTP, keeping you logged in without manual token management.
-2. **Data layer** — Meld communicates with Spotify primarily through GraphQL endpoints (for playlists, liked songs, artist details, albums, new releases, and search) with REST API fallbacks for top tracks and top artists. GraphQL avoids the aggressive rate limits that affect REST endpoints.
-3. **Home screen** — When "Use Spotify for Home" is enabled, Meld builds a personalized home feed from your top tracks, top artists, playlists, and new releases. Enable "Spotify only" to hide all YouTube-based sections for a fully Spotify-driven experience.
-4. **Profile caching** — Your Spotify profile data (top tracks, top artists with images) is persisted locally and served instantly on app restart. Background network refreshes only happen when the cache is stale (6-hour TTL), keeping the home screen fast and responsive.
-5. **Search** — When "Use Spotify for Search" is enabled, search queries go through Spotify's GraphQL search. Results are displayed as Spotify content; tapping a song resolves it to YouTube Music for playback.
-6. **Queue generation** — When you play a Spotify-sourced song, Meld's recommendation engine builds a queue by:
-   - Fetching top tracks from the song's artists
-   - Finding genre-similar artists from your taste profile
-   - Mixing in tracks from your personal top tracks pool
-   - Scoring candidates by artist affinity (30%), genre overlap (20%), source relevance (25%), recency (15%), and popularity similarity (10%)
-   - Diversifying the queue to avoid repetition (max 3 tracks per artist)
-7. **Playback** — Each Spotify track is matched to its YouTube Music equivalent using fuzzy title/artist/duration matching, then streamed via YouTube Music's infrastructure. Matched results are cached locally for instant resolution on subsequent plays. If a match is wrong, you can manually override it from the player's three-dot menu → "Change YouTube version" by pasting the correct YouTube link.
-
-## How the Qobuz Lossless Integration Works
-
-When the Qobuz toggle is enabled (Settings → Integrations → Spotify → "Use Qobuz for lossless playback"), Meld routes audio through Qobuz's FLAC catalog instead of YouTube Music's lossy AAC streams. The integration is fully opt-in and falls back to YouTube Music whenever Qobuz can't deliver — there's no playback interruption either way.
-
-1. **Match resolution** — For every track about to play, Meld looks up the song on Qobuz. Spotify-sourced tracks include the **ISRC** (the universal track identifier — the same ISRC points to the same recording across Spotify, Qobuz, Tidal, etc.) which produces an exact, deterministic match. YT-native tracks fall back to fuzzy title/artist/album matching using the cached song metadata.
-2. **Backend cycling** — Qobuz is accessed through three independent open community resolvers (Monokenny, Jumo, Squid). The primary backend is configurable; if it returns a preview, captcha challenge, or any other failure, Meld automatically retries on the alternates before giving up. Backends that hit a captcha are skipped for five minutes to avoid wasted retries.
-3. **Persistent caching** — A successful match (the Qobuz track ID, hi-res tier, bit depth, sample rate) is saved in the local database keyed by the YouTube ID, so the next play of the same song skips the search step entirely and resolves in a few hundred milliseconds. ISRCs discovered during a Qobuz resolve are also written back to the song's row, which improves the accuracy of future matches across the whole library.
-4. **Quality tier downgrade** — When the saved match knows the track only exists at CD quality on Qobuz (not Hi-Res), Meld caps the requested quality automatically to avoid the wasted "preview returned" round-trip.
-5. **YouTube fallback** — If every Qobuz backend fails (track not in catalog, all resolvers down, network issue, etc.), playback proceeds through the standard YouTube Music pipeline with the lossy AAC stream. The fallback is silent and instant; subsequent plays will try Qobuz again.
-
-> **Important — third-party services:** The Qobuz resolvers are run by independent community projects, not by us. They may go down, get rate-limited, or stop working at any time without notice. When they do, playback automatically falls back to YouTube Music — but you may notice slower start times during the failed Qobuz attempt.
-
-> **Bandwidth and storage:** FLAC streams use 3–10× more data than the standard AAC. Hi-Res (24-bit / 96+ kHz) can exceed 1.5 Mbit/s and use ~30 MB per song downloaded. Consider this if you're on a limited mobile plan or have tight storage.
-
-## Setup
-
-### Spotify Integration
-
-1. In Meld, go to **Settings → Integrations → Spotify**
-2. Tap **Login** — a Spotify login page will open directly inside the app
-3. Sign in with your Spotify account (email/password, Google, Facebook, or Apple)
-4. Once logged in, enable **"Use Spotify for Search"** and/or **"Use Spotify for Home"** — these are off by default
-5. Optionally enable **"Spotify only"** to hide all YouTube-based content from the home screen
-6. Go back to the home screen and **pull down to refresh**. Your Spotify playlists, top tracks, and recommendations should appear within a few seconds.
-
-> **Note:** No developer account, Client ID, or any external setup is required. Just log in with your regular Spotify account — free or Premium.
-
-> **Important:** For reliable playback, disable battery optimization for Meld in your phone settings (**Settings → Apps → Meld → Battery → Unrestricted**). Without this, Android may throttle the app and cause long delays before songs start playing.
-
-### Qobuz Lossless (Optional)
-
-1. Make sure Spotify integration is set up first (see above) — Qobuz lives under the same settings screen
-2. Scroll to the **"Audio quality (experimental)"** section at the bottom of **Settings → Integrations → Spotify**
-3. Enable **"Use Qobuz for lossless playback"**
-4. Pick a **quality tier** — AAC 320, CD (recommended default), or Hi-Res
-5. Pick a **resolver backend** — Monokenny is the recommended default; Jumo and Squid are alternates that the app also rotates through automatically on failure
-6. Set the **country code** (ISO two-letter, e.g. `US`, `IT`, `FR`) — this affects which regional Qobuz catalog is queried
-
-That's it — the next time you play a song, Meld will try Qobuz first and fall back to YouTube Music if the track isn't available there. The toggle can be turned off at any time to revert to YouTube-only playback.
-
-> **Hot-reload:** Toggling Qobuz on/off, switching backend, quality, or country code automatically reloads the currently playing track so the new source takes effect immediately. **No app restart is required.**
-
-### Building from source
-
-For GitHub Actions builds, add these secrets to your repository:
-- `LASTFM_API_KEY` / `LASTFM_SECRET` — from [last.fm/api/account/create](https://www.last.fm/api/account/create)
-
-## FAQ
-
-### Q: How do I download and install Meld?
-
-Go to the [latest release](https://github.com/FrancescoGrazioso/Meld/releases/latest) and download the **Meld.apk** file. Open it on your Android device — you may need to allow "Install from unknown sources" in your phone's settings when prompted. You do **not** need to download the source code files.
-
-### Q: I logged into Spotify but my playlists aren't showing
-
-After logging in, make sure you've enabled **"Use Spotify for Home"** and/or **"Use Spotify for Search"** in **Settings → Integrations → Spotify**. These are off by default. Then go back to the home screen and **pull down to refresh**. The first load may take a few seconds; subsequent launches will be instant thanks to local caching.
-
-### Q: Songs aren't playing / playback is very slow to start
-
-If songs aren't playing or take a long time to start, try the following:
-
-1. **Disable battery optimization for Meld** — Go to your phone's **Settings → Apps → Meld → Battery → Unrestricted** (or "No restrictions"). This is the most common fix. Android aggressively throttles background network and CPU usage for battery-optimized apps, which directly impacts Meld's stream resolution pipeline. Without this setting, playback may take over a minute to start, especially when the screen is locked.
-2. Wait a moment — the first playback after a fresh launch requires initializing the streaming engine (signature verification, token generation). Subsequent plays are much faster.
-3. Check your internet connection
-4. Try playing a different song
-5. Force-close and reopen the app
-
-In general for the first time you play a song it's normal for it to take alonger time, the process to download metadata from spotify, look for a correspondent on youtube and match it can take time, for some song more than others! From the second time it will be stored in a local DB and this process won't need to be run again
-
-### Q: Does Meld work with Bluetooth headphones / AirPods?
-
-Yes. Meld streams audio through YouTube Music's infrastructure like any other music player. It works with any audio output device including Bluetooth headphones, AirPods, car stereos, and speakers.
-
-### Q: Why isn't Meld showing in Android Auto?
-
-1. Go to Android Auto's settings and tap multiple times on the version in the bottom to enable developer settings
-2. In the three dots menu at the top-right of the screen, click "Developer settings"
-3. Enable "Unknown sources"
-
-### Q: Do I need Spotify Premium?
-
-No. Meld uses Spotify for data only (your library, top tracks, search results) — not for audio streaming. Audio is streamed through YouTube Music. A free Spotify account works perfectly.
-
-### Q: Some songs won't play — I get a playback error
-
-Certain tracks on YouTube may be age-restricted or region-locked. If you're not logged into YouTube, some of these tracks cannot be played because YouTube requires authentication to verify your identity. To fix this:
-
-1. Go to **Settings → Account** and log in with your YouTube / Google account
-2. Go back and try playing the song again
-
-If the track still doesn't play after logging in, it may be restricted in your country or permanently unavailable.
-
-### Q: Why do some songs not match correctly?
-
-The Spotify-to-YouTube matching uses fuzzy matching on title, artist name, and duration. In rare cases (live versions, remasters, regional variants), the match may not be perfect. Matched results are cached locally so they're resolved instantly on subsequent plays.
-
-**You can manually fix an incorrect match.** The recommended way is through the player menu:
-
-1. Play the song that has the wrong match
-2. Tap the **three-dot menu (⋮)** at the bottom-right of the Now Playing screen
-3. Tap **"Change YouTube version"** (this option only appears for Spotify-sourced tracks)
-4. You'll see the current match with its thumbnail, title, and YouTube link at the top
-5. Paste the correct YouTube or YouTube Music link in the input field below
-6. A preview of the new match will appear — verify it's the right one and tap **OK**
-7. The player will automatically switch to the new version
-
-The override is saved permanently in your local database and will always be used for that Spotify track, even if the automatic matching would suggest a different result.
-
-You can also access "Change YouTube version" from the three-dot context menu of any song in your library, queue, or album view — as long as that song was originally resolved from a Spotify track. Additionally, long-pressing a track in a Spotify playlist or Liked Songs screen in the Library section opens the override dialog directly.
-
-### Q: How does Qobuz lossless playback work?
-
-When enabled, Meld looks up each track on Qobuz and streams the FLAC file directly. Spotify-sourced tracks are matched via ISRC (the universal track identifier) for an exact match; YouTube-native tracks fall back to fuzzy title/artist matching. If the track isn't on Qobuz, or all backend resolvers are temporarily down, playback falls back silently to the standard YouTube Music stream.
-
-The Qobuz resolvers are run by independent community projects — they're not affiliated with us. They can go down or get rate-limited at any time. When that happens, the fallback to YouTube Music is automatic and instant, but you may notice a delay on the first attempt while the failed resolvers are skipped.
-
-Also note that FLAC streams use 3–10× more data than the standard AAC. Hi-Res files can exceed 30 MB per song. If you're on a metered mobile plan or tight on storage, stick to CD quality or keep the feature off on cellular.
-
-### Q: Why did some songs play in lossless and others didn't?
-
-Not every track exists on Qobuz, and not every track exists at every quality tier. If Qobuz returns only a preview (no full stream available) or all resolvers fail, Meld falls back to YouTube Music silently and remembers the result. Less popular tracks, indie releases, and rare regional versions are the most common cases. The fallback is the intended behavior and the audio will keep playing — just not in FLAC for that specific track.
-
-### Q: Can my Spotify or YouTube account get banned?
-
-**Spotify:** Meld uses Spotify's APIs in read-only mode to access your library, playlists, and recommendations. It does **not** stream audio from Spotify, generate artificial plays, or modify your account data. While using unofficial API clients technically falls outside Spotify's Terms of Service, the risk of account action is considered low — similar apps have operated for years without widespread bans. That said, **use Meld at your own risk** and consider using a secondary Spotify account if you're concerned.
-
-**YouTube/Google:** Audio is streamed through YouTube Music's infrastructure using the InnerTube API. Google has historically been more aggressive with unofficial clients. To minimize risk:
-- Avoid logging into your Google account in Meld unless needed for age-restricted content
-- Using Meld without a Google login carries minimal risk to your Google account
-- If you do log in, be aware this carries a small but nonzero risk
-
-**Bottom line:** No bans have been reported by Meld users to date. However, as with any third-party client, we cannot guarantee that platform policies won't change in the future.
+Output: `app/build/outputs/apk/foss/debug/`
 
 ## Credits
 
-Meld is a fork of [Metrolist](https://github.com/MetrolistGroup/Metrolist), originally created by [Mo Agamy](https://github.com/mostafaalagamy).
+- **[Meld](https://github.com/FrancescoGrazioso/Meld)** by Francesco Grazioso — the foundation this stands on
+- **[Metrolist](https://github.com/mostafaalagamy/Metrolist)** and the YouTube Music client community — upstream lineage
+- The icon is a hand-drawn sketch by the maintainer
 
-### Upstream Projects
+## License
 
-- **InnerTune** — [Zion Huang](https://github.com/z-huang) · [Malopieds](https://github.com/Malopieds)
-- **OuterTune** — [Davide Garberi](https://github.com/DD3Boh) · [Michael Zh](https://github.com/mikooomich)
-
-### Libraries and Integrations
-
-- [**Kizzy**](https://github.com/dead8309/Kizzy) — Discord Rich Presence implementation
-- [**Better Lyrics**](https://better-lyrics.boidu.dev) — Time-synced lyrics with word-by-word highlighting
-- [**SimpMusic Lyrics**](https://github.com/maxrave-dev/SimpMusic) — Lyrics data through the SimpMusic Lyrics API
-- [**metroserver**](https://github.com/MetrolistGroup/metroserver) — Listen Together implementation
-- [**MusicRecognizer**](https://github.com/aleksey-saenko/MusicRecognizer) — Music recognition and Shazam API integration
-
-## Disclaimer
-
-This project and its contents are not affiliated with, funded, authorized, endorsed by, or in any way associated with YouTube, Google LLC, Spotify AB, or any of their affiliates and subsidiaries.
-
-Any trademark, service mark, trade name, or other intellectual property rights used in this project are owned by the respective owners.
+GPL-3.0 — same as the upstream project. Fork freely, contribute back.
