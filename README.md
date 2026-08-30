@@ -20,7 +20,7 @@ The answer is independence: **ListenBrainz support** — scrobbling and library 
 
 > "It's FOSS. It's Italian. Let's see if it can handle la musica."
 
-The logo is drawn **by hand** — stone on stone, literally — in honor of **Narcio**, of his personal sub-lore, and of the **OT** Telegram group that made all of this happen. If you know, you know. 🇮🇹
+The logo is drawn **by hand** — stone on stone, literally — in honor of **Narcio** and his personal sub-lore. If you know, you know. 🇮🇹
 
 ## What's different from Meld
 
@@ -54,7 +54,7 @@ Output: `app/build/outputs/apk/foss/debug/`
 - **[Meld](https://github.com/FrancescoGrazioso/Meld)** by Francesco Grazioso — the foundation, and the original vision
 - **[Metrolist](https://github.com/mostafaalagamy/Metrolist)** and the YouTube Music client community — upstream lineage
 - The Italian Telegram channel that started it all — and everyone who said *"let me cook"*
-- The icon/logo is a hand-drawn sketch — made in honor of Narcio and his personal sub-lore, and of the OT group
+- The icon/logo is a hand-drawn sketch — made in honor of Narcio and his personal sub-lore
 
 ## License
 
