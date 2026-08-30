@@ -3944,6 +3944,23 @@ class MusicService :
                                 if (resolvedIsrc != null && resolvedIsrc != previousIsrc) {
                                     setSongIsrc(mediaId, resolvedIsrc)
                                 }
+                                // Surface the grey-zone stream format in the track
+                                // details sheet (same FormatEntity the YouTube path
+                                // writes) — otherwise resolved FLAC shows blank.
+                                upsert(
+                                    FormatEntity(
+                                        id = mediaId,
+                                        itag = 0,
+                                        mimeType = qobuzResolved.mimeType,
+                                        codecs = qobuzResolved.codecs,
+                                        bitrate = qobuzResolved.bitrate,
+                                        sampleRate = qobuzResolved.sampleRate,
+                                        contentLength = 0L,
+                                        loudnessDb = null,
+                                        perceptualLoudnessDb = null,
+                                        playbackUrl = null,
+                                    ),
+                                )
                             }
                         }
                         return@Factory dataSpec
