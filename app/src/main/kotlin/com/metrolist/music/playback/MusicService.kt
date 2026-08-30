@@ -460,6 +460,12 @@ class MusicService :
     private val qobuzMissUntilMs = java.util.concurrent.ConcurrentHashMap<String, Long>()
     private val QOBUZ_MISS_TTL_MS = 24 * 60 * 60 * 1000L
 
+    /** When the primary Qobuz attempt last failed (any reason) — used to detect transient failures. */
+    private val primaryLastFailureAtMs = java.util.concurrent.atomic.AtomicLong(0L)
+
+    /** Failures within this window of the primary attempt are treated as transient (mirror cooldowns last ~3m). */
+    private val TRANSIENT_WINDOW_MS = 5 * 60 * 1000L
+
     // Enhanced error tracking for strict retry management
     private var currentMediaIdRetryCount = mutableMapOf<String, Int>()
     private val MAX_RETRY_PER_SONG = 3
@@ -3867,6 +3873,7 @@ class MusicService :
                             } else {
                                 e.message ?: e.javaClass.simpleName
                             }
+                            primaryLastFailureAtMs.set(System.currentTimeMillis())
                             Timber.tag("Qobuz").d(
                                 "primary ✘ %s via %s: %s", mediaId, effectiveQuery.backend.name, reason,
                             )
@@ -3912,8 +3919,14 @@ class MusicService :
 
                     // Persist the miss so the next play of this track skips the
                     // cascade entirely. Don't pollute the negative cache when we
-                    // already have a known match (those failures are transient).
-                    if (qobuzResolved == null && !knownOnQobuz) {
+                    // already have a known match OR the failure was transient —
+                    // a mirror cooldown (host cooling down / 503 / timeout) means
+                    // "try again later", not "this track is not on Qobuz".
+                    // Verified on-device 2026-08-30: a 3-minute JUMO cooldown used
+                    // to poison the cache for 24h, blocking the grey-zone cascade.
+                    val lastFailureWasTransient =
+                        System.currentTimeMillis() - primaryLastFailureAtMs.get() < TRANSIENT_WINDOW_MS
+                    if (qobuzResolved == null && !knownOnQobuz && !lastFailureWasTransient) {
                         qobuzMissUntilMs[mediaId] = System.currentTimeMillis() + QOBUZ_MISS_TTL_MS
                         Timber.tag("Qobuz").d(
                             "negative-cache set for %s (%dm)", mediaId, QOBUZ_MISS_TTL_MS / 60_000,
