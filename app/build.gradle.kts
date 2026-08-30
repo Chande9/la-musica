@@ -30,7 +30,8 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = applicationIdOverride ?: "com.meld.app"
+        // Own package: installs BESIDE the original Meld (com.meld.app), never replaces it
+        applicationId = applicationIdOverride ?: "app.lamusica"
         minSdk = 26
         targetSdk = 36
         versionCode = 25

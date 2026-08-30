@@ -47,7 +47,7 @@ jobs:
       - name: Build Release APK (No Lint)
         run: ./gradlew --console=plain assembleFossRelease --warning-mode summary -x lint -x lintFossRelease
         env:
-          METROLIST_APPLICATION_ID: com.meld.app.test
+          METROLIST_APPLICATION_ID: app.lamusica.test
           METROLIST_APP_NAME: Meld Testing
           PULL_REQUEST: "false"
           GITHUB_EVENT_NAME: ${{ github.event_name }}
