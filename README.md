@@ -10,7 +10,7 @@
 
 ---
 
-**La Musica** is a fork of [Meld](https://github.com/FrancescoGrazioso/Meld) by Francesco Grazioso — a music player that manages your library, playlists and the Spotify algorithm, using media from YouTube Music. We maintain it as a *daily driver*: fast, honest, and fully under your control. No trackers, no dark patterns, no features you didn't ask for.
+**La Musica** is a fork of [Meld](https://github.com/FrancescoGrazioso/Meld) by Francesco Grazioso (*che ringrazio e saluto*) — a music player that manages your library, playlists and the Spotify algorithm, using media from YouTube Music. We maintain it as a *daily driver*: fast, honest, and fully under your control. No trackers, no dark patterns, no features you didn't ask for.
 
 ## The story
 

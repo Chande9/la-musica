@@ -4385,6 +4385,24 @@ class MusicService :
             }
         }
 
+        // Foreground guarantee: Android 14+ kills the service (ANR "did not then call
+        // startForeground") if the onCreate attempt was blocked while app was in background.
+        // Re-assert foreground here on every start command.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                startForeground(
+                    NOTIFICATION_ID,
+                    NotificationCompat.Builder(this, CHANNEL_ID)
+                        .setContentTitle(getString(R.string.music_player))
+                        .setSmallIcon(R.drawable.small_icon)
+                        .setOngoing(true)
+                        .build(),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
+                )
+            } catch (_: Exception) {
+                // still not allowed (deep background) — super.onStartCommand handles retry
+            }
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
