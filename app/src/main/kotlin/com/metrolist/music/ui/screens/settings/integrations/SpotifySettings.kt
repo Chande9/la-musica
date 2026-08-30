@@ -93,7 +93,9 @@ import com.metrolist.music.ui.utils.backToMain
 import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
 import com.metrolist.spotify.Spotify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -246,7 +248,10 @@ fun SpotifySettings(
                 onCheckedChange = { enabled ->
                     onSyncLikesChange(enabled)
                     if (enabled) {
-                        coroutineScope.launch {
+                        // App-scoped: a rememberCoroutineScope dies with the screen
+                        // (ForgottenCoroutineScopeException) when the user leaves
+                        // Settings mid-sync and the likes never reach the DB.
+                        SyncScope.launch {
                             runInitialSpotifyLikeSync(
                                 database = database,
                                 onComplete = { count ->
@@ -668,6 +673,9 @@ internal object SpotifyLikeSyncState {
     val progress = MutableStateFlow(0 to 0)
     val isSyncing = MutableStateFlow(false)
 }
+
+/** Process-wide scope: the like sync must survive leaving the Settings screen. */
+internal val SyncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 /**
  * Pulls all liked songs from Spotify, resolves each to a YouTube equivalent
