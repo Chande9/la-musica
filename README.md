@@ -20,7 +20,7 @@ The answer is independence: **ListenBrainz support** — scrobbling and library 
 
 > "It's FOSS. It's Italian. Let's see if it can handle la musica."
 
-The logo is drawn **by hand** — ink on paper — in honor of **Narcio**, of his personal sub-lore, and of the **OT** Telegram group that made all of this happen. If you know, you know. 🇮🇹
+The logo is drawn **by hand** — stone on stone, literally — in honor of **Narcio**, of his personal sub-lore, and of the **OT** Telegram group that made all of this happen. If you know, you know. 🇮🇹
 
 ## What's different from Meld
 
