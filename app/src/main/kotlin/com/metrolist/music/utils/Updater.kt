@@ -214,6 +214,8 @@ object Updater {
     suspend fun checkForUpdate(forceRefresh: Boolean = false): Result<Pair<ReleaseInfo?, Boolean>> =
         withContext(Dispatchers.IO) {
             runCatching {
+                // Personal edition updates manually (adb); the public channel ships the standard APK.
+                if (BuildConfig.GREY_ZONE_VISIBLE) return@runCatching null to false
                 // Check if we should fetch (2 hour interval)
                 val shouldFetch = forceRefresh || 
                     (System.currentTimeMillis() - lastCheckTime) > CHECK_INTERVAL_MILLIS
