@@ -337,4 +337,7 @@
     <string name="new_version_available">New version available</string>
 
     <!-- Grey Zone -->
+    <string name="grey_zone_disclaimer_title">Grey Zone Notice</string>
+    <string name="grey_zone_disclaimer_body">"This app includes features that use community proxies of paid catalogs (grey zones). The developer of La Musica does NOT endorse grey zones — but neither denies the user's right to choose. Nothing here is illegal. What you use is your decision, and yours alone."</string>
+    <string name="grey_zone_disclaimer_accept">I understand</string>
 </resources>

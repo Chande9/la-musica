@@ -90,6 +90,7 @@ import com.metrolist.music.constants.AudioFocusEnabledKey
 import com.metrolist.music.constants.AudioNormalizationKey
 import com.metrolist.music.constants.AudioOffload
 import com.metrolist.music.constants.AudioQualityKey
+import com.metrolist.music.constants.GreyZoneDisclaimerAcceptedKey
 import com.metrolist.music.constants.EnableQobuzKey
 import com.metrolist.music.constants.QobuzAudioQuality
 import com.metrolist.music.constants.QobuzAudioQualityKey
@@ -102,6 +103,9 @@ import com.metrolist.music.constants.QobuzMatchOverridesKey
 import com.metrolist.music.constants.QobuzSquidEndpointKey
 import com.metrolist.music.constants.QobuzTryptEndpointKey
 import com.metrolist.music.qobuz.QobuzAudioProvider
+import com.metrolist.music.qobuz.amz.AmzResolver
+import com.metrolist.music.qobuz.arcod.ArcodResolver
+import com.metrolist.music.qobuz.arcod.ArcodSessionManager
 import com.metrolist.music.qobuz.QobuzMatchOverride
 import com.metrolist.music.qobuz.QobuzMatchOverrides
 import com.metrolist.spotify.models.SpotifyTrack
@@ -530,6 +534,9 @@ class MusicService :
     override fun onCreate() {
         super.onCreate()
         isRunning = true
+
+        // Wire arcod session persistence (personal flavor; no-op stub in standard).
+        ArcodSessionManager.init(this)
 
         // Player rediness reset to false
         playerInitialized.value = false
@@ -3770,7 +3777,15 @@ class MusicService :
             // to DB title/artist/album for YT-native tracks. Silently falls through
             // to the YouTube path on any failure.
             val qobuzEnabled = dataStore.get(EnableQobuzKey, false)
-            if (qobuzEnabled) {
+                // Grey zone gate (2sep2026): personal edition = always on
+                // (personal edition, no consent gate). Standard edition = gated by
+                // the first-launch disclaimer (GreyZoneDisclaimerAcceptedKey).
+                val greyZoneOk = BuildConfig.GREY_ZONE_VISIBLE ||
+                    dataStore.get(GreyZoneDisclaimerAcceptedKey, false)
+                if (qobuzEnabled && !greyZoneOk) {
+                    Timber.tag(TAG).w("lossless resolution skipped (disclaimer not accepted)")
+                }
+            if (qobuzEnabled && greyZoneOk) {
                 val qobuzQualityEnum = dataStore.get(QobuzAudioQualityKey)
                     .toEnum(QobuzAudioQuality.CD_QUALITY)
                 val qualityCode = QobuzAudioProvider.qualityCodeFor(qobuzQualityEnum)
@@ -3914,6 +3929,57 @@ class MusicService :
                                 )
                             }.getOrNull()
                             if (qobuzResolved != null) break
+                        }
+                    }
+
+                    // Grey-Zone cascade: amz.squid.wtf (Amazon Music proxy) + arcod.xyz
+                    // (Qobux proxy, job-render pipeline). Only reached when every
+                    // legit-mirror backend failed and the user explicitly consented
+                    // in Settings → Grey Zone.
+                    if (qobuzResolved == null && greyZoneOk) {
+                        // arcod first: open Range-capable FLAC, no CENC — verified E2E.
+                        qobuzResolved = runCatching {
+                            runBlocking(Dispatchers.IO) {
+                                withTimeout(95_000L) {
+                                    ArcodResolver.resolve(
+                                        mediaId = mediaId,
+                                        title = qobuzQuery.title,
+                                        artist = qobuzQuery.artists.firstOrNull() ?: "",
+                                        album = qobuzQuery.album,
+                                        isrc = qobuzQuery.isrc,
+                                    )
+                                }
+                            }
+                        }.onFailure { e ->
+                            val reason = if (e is TimeoutCancellationException) "timed out after 95s"
+                            else e.message ?: e.javaClass.simpleName
+                            Timber.tag("Qobuz").d("arcod ✘ %s: %s", mediaId, reason)
+                        }.getOrNull()
+                        if (qobuzResolved != null) {
+                            Timber.tag("Qobuz").i("arcod ✔ %s → %s", mediaId, qobuzResolved.trackId)
+                        }
+                    }
+
+                    if (qobuzResolved == null && greyZoneOk) {
+                        qobuzResolved = runCatching {
+                            runBlocking(Dispatchers.IO) {
+                                withTimeout(10_000L) {
+                                    AmzResolver.resolve(
+                                        mediaId = mediaId,
+                                        title = qobuzQuery.title,
+                                        artist = qobuzQuery.artists.firstOrNull() ?: "",
+                                        album = qobuzQuery.album,
+                                        isrc = qobuzQuery.isrc,
+                                    )
+                                }
+                            }
+                        }.onFailure { e ->
+                            val reason = if (e is TimeoutCancellationException) "timed out after 10s"
+                            else e.message ?: e.javaClass.simpleName
+                            Timber.tag("Qobuz").d("amz ✘ %s: %s", mediaId, reason)
+                        }.getOrNull()
+                        if (qobuzResolved != null) {
+                            Timber.tag("Qobuz").i("amz ✔ %s → %s (asin=%s)", mediaId, qobuzResolved.label, qobuzResolved.trackId)
                         }
                     }
 

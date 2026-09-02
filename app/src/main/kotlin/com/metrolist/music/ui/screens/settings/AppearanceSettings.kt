@@ -594,6 +594,7 @@ fun AppearanceSettings(
                     PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                     PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                     PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                    PlayerBackgroundStyle.GLASS -> stringResource(R.string.liquid_glass)
                 }
             },
         )
@@ -614,6 +615,7 @@ fun AppearanceSettings(
                     MiniPlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                     MiniPlayerBackgroundStyle.TRANSPARENT -> stringResource(R.string.transparent)
                     MiniPlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                    MiniPlayerBackgroundStyle.GLASS -> stringResource(R.string.liquid_glass)
                     MiniPlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                     MiniPlayerBackgroundStyle.PURE_BLACK -> stringResource(R.string.pure_black)
                 }
@@ -1133,6 +1135,7 @@ fun AppearanceSettings(
                                                 MiniPlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                                                 MiniPlayerBackgroundStyle.TRANSPARENT -> stringResource(R.string.transparent)
                                                 MiniPlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                                                MiniPlayerBackgroundStyle.GLASS -> stringResource(R.string.liquid_glass)
                                                 MiniPlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                                                 MiniPlayerBackgroundStyle.PURE_BLACK -> stringResource(R.string.pure_black)
                                             }
@@ -1189,6 +1192,7 @@ fun AppearanceSettings(
                                     PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                                     PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                                     PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                                    PlayerBackgroundStyle.GLASS -> stringResource(R.string.liquid_glass)
                                 },
                             )
                         },

@@ -291,6 +291,7 @@ private fun NewMiniPlayer(
         MiniPlayerBackgroundStyle.DEFAULT    -> MaterialTheme.colorScheme.surfaceContainer
         MiniPlayerBackgroundStyle.TRANSPARENT -> Color.Black.copy(alpha = 0.25f)
         MiniPlayerBackgroundStyle.BLUR       -> MaterialTheme.colorScheme.surfaceContainer
+        MiniPlayerBackgroundStyle.GLASS      -> Color.Black.copy(alpha = 0.20f)
         MiniPlayerBackgroundStyle.GRADIENT   -> MaterialTheme.colorScheme.surfaceContainer
         MiniPlayerBackgroundStyle.PURE_BLACK -> Color.Black
     }
@@ -402,6 +403,31 @@ private fun NewMiniPlayer(
                             )
                         }
                     }
+                }
+                MiniPlayerBackgroundStyle.GLASS -> {
+                    // Liquid Glass: fondo blur translúcido + tinte suave + brillo especular
+                    mediaMetadata?.thumbnailUrl?.let { url ->
+                        AsyncImage(
+                            model = url,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .blur(40.dp),
+                        )
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.35f),
+                                    )
+                                )
+                            ),
+                    )
                 }
                 MiniPlayerBackgroundStyle.GRADIENT -> {
                     val colors = if (gradientColors.isNotEmpty()) gradientColors

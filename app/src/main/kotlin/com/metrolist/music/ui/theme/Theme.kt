@@ -8,8 +8,12 @@ package com.metrolist.music.ui.theme
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
@@ -20,19 +24,31 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import com.materialkolor.score.Score
 
-val DefaultThemeColor = Color(0xFFED5564)
+val DefaultThemeColor = Color(0xFF3FBFCF) // Aero-Expressive: turquesa-agua Frutiger (antes coral 0xFFED5564)
 
+// Aero-Expressive: shapes orgánicas suaves (entre M3 estándar 4-16dp y las cookies Expressive)
+private val AeroShapes = Shapes(
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MetrolistTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     pureBlack: Boolean = false,
     themeColor: Color = DefaultThemeColor,
+    motionScheme: MotionScheme = MotionScheme.expressive(),
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -62,9 +78,11 @@ fun MetrolistTheme(
         }
     }
 
-    // Use standard MaterialTheme instead of MaterialExpressiveTheme
+    // Aero-Expressive: MaterialTheme con motionScheme (spring physics) + shapes orgánicas
     MaterialTheme(
         colorScheme = colorScheme,
+        motionScheme = motionScheme,
+        shapes = AeroShapes,
         typography = AppTypography, // Use the defined AppTypography
         content = content
     )

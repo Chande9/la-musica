@@ -196,7 +196,7 @@ private fun getMediaItems(
 private fun getTextColor(playerBackground: PlayerBackgroundStyle): Color {
     return when (playerBackground) {
         PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
-        PlayerBackgroundStyle.BLUR -> Color.White
+        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GLASS -> Color.White
         PlayerBackgroundStyle.GRADIENT -> Color.White
     }
 }

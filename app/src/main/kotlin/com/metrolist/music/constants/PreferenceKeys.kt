@@ -19,6 +19,7 @@ val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
 val SelectedThemeColorKey = intPreferencesKey("selectedThemeColor")
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
+val GreyZoneDisclaimerAcceptedKey = booleanPreferencesKey("greyZoneDisclaimerAccepted")
 val PureBlackMiniPlayerKey = booleanPreferencesKey("pureBlackMiniPlayer")
 val MiniPlayerOutlineKey = booleanPreferencesKey("miniPlayerOutline")
 val MiniPlayerBackgroundStyleKey = stringPreferencesKey("miniPlayerBackgroundStyle")
@@ -27,6 +28,7 @@ enum class MiniPlayerBackgroundStyle {
     DEFAULT,
     TRANSPARENT,
     BLUR,
+    GLASS,
     GRADIENT,
     PURE_BLACK,
 }
@@ -494,6 +496,7 @@ enum class PlayerBackgroundStyle {
     DEFAULT,
     GRADIENT,
     BLUR,
+    GLASS,
 }
 
 val TopSize = stringPreferencesKey("topSize")

@@ -23,7 +23,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
-import com.metrolist.music.BuildConfig
 import com.metrolist.music.constants.DarkModeKey
 import com.metrolist.music.constants.PureBlackKey
 import com.metrolist.music.ui.screens.artist.ArtistAlbumsScreen
@@ -405,7 +404,6 @@ fun NavGraphBuilder.navigationBuilder(
     composable("settings/privacy") {
         PrivacySettings(navController)
     }
-
 
     composable("settings/backup_restore") {
         BackupAndRestore(navController)

@@ -289,4 +289,8 @@
     <string name="use_login_for_browse_desc">Esto puede influir en el contenido que ve y, por ejemplo, muestra álbumes exclusivos si ha iniciado sesión con una cuenta Premium</string>
     <string name="action_login">Acceder</string>
 
+    <!-- Zona Gris -->
+    <string name="grey_zone_disclaimer_title">Aviso de Zona Gris</string>
+    <string name="grey_zone_disclaimer_body">"Esta app incluye funciones que usan proxies comunitarios de catálogos de pago (zonas grises). El desarrollador de La Musica NO apoya las zonas grises — pero tampoco niega el derecho del usuario a decidir. Nada de esto es ilegal. Lo que uses es tu decisión, y solo tuya."</string>
+    <string name="grey_zone_disclaimer_accept">Entendido</string>
 </resources>

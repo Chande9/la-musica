@@ -21,7 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -35,6 +38,7 @@ import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
 import com.metrolist.music.ui.utils.isScrollingUp
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BoxScope.HideOnScrollFAB(
     visible: Boolean = true,
@@ -94,6 +98,7 @@ fun BoxScope.HideOnScrollFAB(
             if (showMainAction) {
                 FloatingActionButton(
                     onClick = onClick,
+                    shape = MaterialShapes.Cookie9Sided.toShape(),
                 ) {
                     Icon(
                         painter = painterResource(icon),
@@ -105,6 +110,7 @@ fun BoxScope.HideOnScrollFAB(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BoxScope.HideOnScrollFAB(
     visible: Boolean = true,
@@ -164,6 +170,7 @@ fun BoxScope.HideOnScrollFAB(
             if (showMainAction) {
                 FloatingActionButton(
                     onClick = onClick,
+                    shape = MaterialShapes.Cookie9Sided.toShape(),
                 ) {
                     Icon(
                         painter = painterResource(icon),
@@ -175,6 +182,7 @@ fun BoxScope.HideOnScrollFAB(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BoxScope.HideOnScrollFAB(
     visible: Boolean = true,
@@ -234,6 +242,7 @@ fun BoxScope.HideOnScrollFAB(
             if (showMainAction) {
                 FloatingActionButton(
                     onClick = onClick,
+                    shape = MaterialShapes.Cookie9Sided.toShape(),
                 ) {
                     Icon(
                         painter = painterResource(icon),

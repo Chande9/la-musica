@@ -245,7 +245,7 @@ fun BottomSheetPlayer(
     val shouldUseDarkButtonColors =
         remember(playerBackground, useDarkTheme) {
             when (playerBackground) {
-                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT -> true
+                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLASS -> true
                 PlayerBackgroundStyle.DEFAULT -> useDarkTheme
             }
         }
@@ -260,7 +260,7 @@ fun BottomSheetPlayer(
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
 
             when (playerBackground) {
-                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT -> {
+                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLASS -> {
                     insetsController.isAppearanceLightStatusBars = false
                 }
 
@@ -439,6 +439,7 @@ fun BottomSheetPlayer(
                 PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
                 PlayerBackgroundStyle.BLUR -> Color.White
                 PlayerBackgroundStyle.GRADIENT -> Color.White
+                PlayerBackgroundStyle.GLASS -> Color.White
             },
         label = "TextBackgroundColor",
     )
@@ -449,6 +450,7 @@ fun BottomSheetPlayer(
                 PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surface
                 PlayerBackgroundStyle.BLUR -> Color.Black
                 PlayerBackgroundStyle.GRADIENT -> Color.Black
+                PlayerBackgroundStyle.GLASS -> Color.Black
             },
         label = "icBackgroundColor",
     )
@@ -456,7 +458,8 @@ fun BottomSheetPlayer(
     val (textButtonColor, iconButtonColor) =
         when {
             playerBackground == PlayerBackgroundStyle.BLUR ||
-                playerBackground == PlayerBackgroundStyle.GRADIENT -> {
+                playerBackground == PlayerBackgroundStyle.GRADIENT ||
+                playerBackground == PlayerBackgroundStyle.GLASS -> {
                 when (playerButtonsStyle) {
                     PlayerButtonsStyle.DEFAULT -> {
                         Pair(Color.White, Color.Black)
@@ -509,7 +512,8 @@ fun BottomSheetPlayer(
     val (sideButtonContainerColor, sideButtonContentColor) =
         when {
             playerBackground == PlayerBackgroundStyle.BLUR ||
-                playerBackground == PlayerBackgroundStyle.GRADIENT -> {
+                playerBackground == PlayerBackgroundStyle.GRADIENT ||
+                playerBackground == PlayerBackgroundStyle.GLASS -> {
                 when (playerButtonsStyle) {
                     PlayerButtonsStyle.DEFAULT -> {
                         Pair(
@@ -793,6 +797,46 @@ fun BottomSheetPlayer(
                         .background(bottomSheetBackgroundColor),
             ) {
                 when (playerBackground) {
+                    PlayerBackgroundStyle.GLASS -> {
+                        // Liquid Glass: portada blur profundo + velo translúcido (glass sheet)
+                        AnimatedContent(
+                            targetState = mediaMetadata?.thumbnailUrl,
+                            transitionSpec = {
+                                fadeIn(tween(800)).togetherWith(fadeOut(tween(800)))
+                            },
+                            label = "glassBackground",
+                        ) { thumbnailUrl ->
+                            if (thumbnailUrl != null) {
+                                AsyncImage(
+                                    model =
+                                        ImageRequest
+                                            .Builder(context)
+                                            .data(thumbnailUrl)
+                                            .size(100, 100)
+                                            .allowHardware(false)
+                                            .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .blur(if (useDarkTheme) 200.dp else 140.dp),
+                                )
+                            }
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            if (useDarkTheme) {
+                                                Color.Black.copy(alpha = 0.55f)
+                                            } else {
+                                                Color.White.copy(alpha = 0.45f)
+                                            }
+                                        ),
+                            )
+                        }
+                    }
                     PlayerBackgroundStyle.BLUR -> {
                         AnimatedContent(
                             targetState = mediaMetadata?.thumbnailUrl,
@@ -1089,7 +1133,7 @@ fun BottomSheetPlayer(
                             bottomEnd = 50.dp,
                         )
 
-                    val middleShape = RoundedCornerShape(3.dp)
+                    val middleShape = RoundedCornerShape(4.dp)
 
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1216,7 +1260,7 @@ fun BottomSheetPlayer(
                                 modifier =
                                     Modifier
                                         .size(40.dp)
-                                        .clip(RoundedCornerShape(24.dp))
+                                        .clip(RoundedCornerShape(28.dp))
                                         .background(textButtonColor)
                                         .clickable { isFullScreen = !isFullScreen },
                             ) {
@@ -1235,7 +1279,7 @@ fun BottomSheetPlayer(
                                 modifier =
                                     Modifier
                                         .size(40.dp)
-                                        .clip(RoundedCornerShape(24.dp))
+                                        .clip(RoundedCornerShape(28.dp))
                                         .background(textButtonColor)
                                         .clickable {
                                             val intent =
@@ -1272,7 +1316,7 @@ fun BottomSheetPlayer(
                                 modifier =
                                     Modifier
                                         .size(40.dp)
-                                        .clip(RoundedCornerShape(24.dp))
+                                        .clip(RoundedCornerShape(28.dp))
                                         .background(textButtonColor)
                                         .clickable {
                                             menuState.show {
@@ -1976,7 +2020,7 @@ fun InlineLyricsView(
         modifier =
             Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center,
     ) {
         when {
@@ -2030,7 +2074,7 @@ fun MoreActionsButton(
         modifier =
             Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(28.dp))
                 .background(textButtonColor)
                 .clickable {
                     menuState.show {
@@ -2074,7 +2118,7 @@ private fun PlayerMoreMenuButton(
         modifier =
             Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(28.dp))
                 .background(textButtonColor)
                 .clickable {
                     menuState.show {

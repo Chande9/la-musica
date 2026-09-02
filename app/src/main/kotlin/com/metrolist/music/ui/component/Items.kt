@@ -153,7 +153,7 @@ inline fun ListItem(
             modifier // playing highlight
                 .height(ListItemHeight)
                 .padding(horizontal = 8.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(
                     color = // selected active
                         if (isSelected == true) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
@@ -163,7 +163,7 @@ inline fun ListItem(
             modifier // inactive selected
                 .height(ListItemHeight)
                 .padding(horizontal = 8.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(color = MaterialTheme.colorScheme.inversePrimary.copy(alpha = 0.4f))
         } else {
             modifier // default

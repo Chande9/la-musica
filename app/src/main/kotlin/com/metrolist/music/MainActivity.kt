@@ -47,6 +47,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -60,6 +61,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
@@ -132,6 +134,7 @@ import com.metrolist.music.constants.DisableScreenshotKey
 import com.metrolist.music.constants.DynamicThemeKey
 import com.metrolist.music.constants.EnableHighRefreshRateKey
 import com.metrolist.music.constants.ExperimentalLyricsKey
+import com.metrolist.music.constants.GreyZoneDisclaimerAcceptedKey
 import com.metrolist.music.constants.LastSeenVersionKey
 import com.metrolist.music.constants.ListenTogetherInTopBarKey
 import com.metrolist.music.constants.ListenTogetherUsernameKey
@@ -526,6 +529,7 @@ class MainActivity : ComponentActivity() {
         val selectedThemeColor = Color(selectedThemeColorInt)
 
         val showChangelog = rememberSaveable { mutableStateOf(false) }
+        val showGreyZoneDisclaimer = rememberSaveable { mutableStateOf(false) }
 
         var themeColor by rememberSaveable(stateSaver = ColorSaver) {
             mutableStateOf(selectedThemeColor)
@@ -593,10 +597,16 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
 
                 LaunchedEffect(Unit) {
-                    val lastSeenVersion = dataStore.data.first()[LastSeenVersionKey] ?: ""
                     val currentVersion = BuildConfig.VERSION_NAME
-                    if (lastSeenVersion != currentVersion) {
-                        showChangelog.value = true
+
+                    // Grey Zone disclaimer: shown on first launch until accepted,
+                    // in BOTH editions. Replaces the old changelog popup on open
+                    // (changelog remains accessible from Settings). In the personal
+                    // edition it is informational only — the cascade stays always-on
+                    // (personal edition, no consent gate). In the standard edition it
+                    // also gates the grey-zone cascade (stubs, inert by design).
+                    if (dataStore.data.first()[GreyZoneDisclaimerAcceptedKey] != true) {
+                        showGreyZoneDisclaimer.value = true
                     }
 
                     // SimpMusic Removal Migration
@@ -917,6 +927,26 @@ class MainActivity : ComponentActivity() {
                 ) {
                     if (showChangelog.value) {
                         ChangelogScreen(onDismiss = { showChangelog.value = false })
+                    }
+
+                    if (showGreyZoneDisclaimer.value) {
+                        AlertDialog(
+                            onDismissRequest = { showGreyZoneDisclaimer.value = false },
+                            title = { Text(stringResource(R.string.grey_zone_disclaimer_title)) },
+                            text = { Text(stringResource(R.string.grey_zone_disclaimer_body)) },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        showGreyZoneDisclaimer.value = false
+                                        coroutineScope.launch {
+                                            dataStore.edit { it[GreyZoneDisclaimerAcceptedKey] = true }
+                                        }
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.grey_zone_disclaimer_accept))
+                                }
+                            },
+                        )
                     }
 
                     Scaffold(

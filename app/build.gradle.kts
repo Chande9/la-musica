@@ -34,8 +34,8 @@ android {
         applicationId = applicationIdOverride ?: "app.lamusica"
         minSdk = 26
         targetSdk = 36
-        versionCode = 25
-        versionName = "0.8.9"
+        versionCode = 26
+        versionName = "0.8.10"
         resValue("string", "app_name", appNameOverride ?: "La Musica")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -60,7 +60,7 @@ android {
         buildConfigField("String", "CRASH_REPORT_TOKEN", "\"$crashToken\"")
     }
 
-    flavorDimensions += listOf("variant")
+    flavorDimensions += listOf("variant", "edition")
     productFlavors {
         // FOSS variant (default) - F-Droid compatible, no Google Play Services
         create("foss") {
@@ -84,6 +84,21 @@ android {
             buildConfigField("Boolean", "UPDATER_AVAILABLE", "false")
         }
 
+        // Edition dimension: personal vs standard.
+        // personal: OWN package app.lamusicapro — coexists with public (app.lamusica) and
+        // with the original Meld (com.meld.app). Never conflicts, never replaces.
+        create("personal") {
+            dimension = "edition"
+            isDefault = true
+            buildConfigField("Boolean", "GREY_ZONE_VISIBLE", "true")
+            applicationIdSuffix = "pro"
+            // Launcher label diferenciado (2sep2026): "La Musica Pro" vs pública "La Musica"
+            resValue("string", "app_name", "La Musica Pro")
+        }
+        create("standard") {
+            dimension = "edition"
+            buildConfigField("Boolean", "GREY_ZONE_VISIBLE", "false")
+        }
     }
 
     signingConfigs {

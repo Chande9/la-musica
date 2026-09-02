@@ -290,4 +290,7 @@
     <string name="action_login">Accedi</string>
 
     <!-- Zona Grigia -->
+    <string name="grey_zone_disclaimer_title">Avviso Zona Grigia</string>
+    <string name="grey_zone_disclaimer_body">"Questa app include funzioni che usano proxy comunitari di cataloghi a pagamento (zone grigie). Lo sviluppatore di La Musica NON appoggia le zone grigie — ma nemmeno nega il diritto dell'utente di decidere. Niente di tutto questo è illegale. Ciò che usi è una tua decisione, e solo tua."</string>
+    <string name="grey_zone_disclaimer_accept">Ho capito</string>
 </resources>
