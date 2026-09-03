@@ -34,8 +34,8 @@ android {
         applicationId = applicationIdOverride ?: "app.lamusica"
         minSdk = 26
         targetSdk = 36
-        versionCode = 26
-        versionName = "1.1.7"
+        versionCode = 27
+        versionName = "1.1.8"
         resValue("string", "app_name", appNameOverride ?: "La Musica")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
