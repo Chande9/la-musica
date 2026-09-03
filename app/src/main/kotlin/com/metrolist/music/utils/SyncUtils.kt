@@ -22,6 +22,8 @@ import com.metrolist.music.constants.LastFMUseSendLikes
 import com.metrolist.music.constants.LastFullSyncKey
 import com.metrolist.music.constants.SYNC_COOLDOWN
 import com.metrolist.music.db.MusicDatabase
+import com.metrolist.music.db.entities.AlbumArtistMap
+import com.metrolist.music.db.entities.AlbumEntity
 import com.metrolist.music.db.entities.ArtistEntity
 import com.metrolist.music.db.entities.PlaylistEntity
 import com.metrolist.music.db.entities.PlaylistSongMap
@@ -83,6 +85,7 @@ sealed class SyncOperation {
     data class SaveEpisode(val episodeId: String, val save: Boolean, val setVideoId: String?) : SyncOperation()
     data object SpotifyFollowedArtists : SyncOperation()
     data object SpotifyLikedSongs : SyncOperation()
+    data object SpotifySavedAlbums : SyncOperation()
     data object CleanupDuplicates : SyncOperation()
     data object ClearAllSynced : SyncOperation()
     data object ClearPodcastData : SyncOperation()
@@ -205,6 +208,7 @@ class SyncUtils @Inject constructor(
             is SyncOperation.SaveEpisode -> executeSaveEpisode(operation.episodeId, operation.save, operation.setVideoId)
             is SyncOperation.SpotifyFollowedArtists -> executeSyncSpotifyFollowedArtists()
             is SyncOperation.SpotifyLikedSongs -> executeSyncSpotifyLikedSongs()
+            is SyncOperation.SpotifySavedAlbums -> executeSyncSpotifySavedAlbums()
             is SyncOperation.CleanupDuplicates -> executeCleanupDuplicatePlaylists()
             is SyncOperation.ClearAllSynced -> executeClearAllSyncedContent()
             is SyncOperation.ClearPodcastData -> executeClearPodcastData()
@@ -395,6 +399,12 @@ class SyncUtils @Inject constructor(
         }
     }
 
+    fun syncSpotifySavedAlbums() {
+        syncScope.launch {
+            syncChannel.send(SyncOperation.SpotifySavedAlbums)
+        }
+    }
+
     fun syncPodcastSubscriptions() {
         syncScope.launch {
             syncChannel.send(SyncOperation.PodcastSubscriptions)
@@ -435,6 +445,7 @@ class SyncUtils @Inject constructor(
     suspend fun syncArtistsSubscriptionsSuspend() = executeSyncArtistsSubscriptions()
     suspend fun syncSpotifyFollowedArtistsSuspend() = executeSyncSpotifyFollowedArtists()
     suspend fun syncSpotifyLikedSongsSuspend() = executeSyncSpotifyLikedSongs()
+    suspend fun syncSpotifySavedAlbumsSuspend() = executeSyncSpotifySavedAlbums()
     suspend fun syncPodcastSubscriptionsSuspend() = executeSyncPodcastSubscriptions()
     suspend fun syncEpisodesForLaterSuspend() = executeSyncEpisodesForLater()
     suspend fun syncSavedPlaylistsSuspend() = executeSyncSavedPlaylists()
@@ -1202,6 +1213,83 @@ class SyncUtils @Inject constructor(
             Timber.d("Synced $synced/${followedArtists.size} Spotify followed artists")
         } catch (e: Exception) {
             Timber.e(e, "Error syncing Spotify followed artists")
+        }
+    }
+
+    /**
+     * Pulls the user's Spotify saved albums into the local DB so they show
+     * up under the Albums tab (SPOTIFY filter). Albums are stored with id
+     * `spotify:<id>` — the album route already redirects those to
+     * SpotifyAlbumScreen, so tapping one opens the Spotify album view.
+     * Mirrors executeSyncSpotifyFollowedArtists(): add-only, no removal.
+     */
+    private suspend fun executeSyncSpotifySavedAlbums() = withContext(Dispatchers.IO) {
+        if (!com.metrolist.spotify.Spotify.isAuthenticated()) {
+            Timber.d("Skipping Spotify saved albums sync - not authenticated with Spotify")
+            return@withContext
+        }
+
+        updateState { copy(currentOperation = "Syncing Spotify saved albums") }
+
+        try {
+            val savedAlbums = com.metrolist.music.playback.SpotifyProfileCache
+                .getSavedAlbums(context, limit = 500)
+
+            if (savedAlbums.isEmpty()) {
+                Timber.d("No Spotify saved albums found")
+                return@withContext
+            }
+
+            var synced = 0
+            for (spotifyAlbum in savedAlbums) {
+                try {
+                    val spotifyId = spotifyAlbum.id
+                    if (spotifyId.isBlank()) continue
+                    val albumId = "spotify:$spotifyId"
+
+                    database.transaction {
+                        val existing = getAlbumEntityById(albumId)
+                        if (existing == null) {
+                            insert(
+                                AlbumEntity(
+                                    id = albumId,
+                                    title = spotifyAlbum.name,
+                                    year = spotifyAlbum.releaseDate?.toIntOrNull(),
+                                    thumbnailUrl = spotifyAlbum.images.firstOrNull()?.url,
+                                    songCount = 0,
+                                    duration = 0,
+                                    inLibrary = LocalDateTime.now(),
+                                )
+                            )
+                            spotifyAlbum.artists.forEachIndexed { index, artist ->
+                                val artistSpotifyId = artist.id
+                                if (artistSpotifyId.isNullOrBlank()) return@forEachIndexed
+                                val artistId = "SP_$artistSpotifyId"
+                                if (getArtistById(artistId) == null) {
+                                    insert(
+                                        ArtistEntity(
+                                            id = artistId,
+                                            name = artist.name,
+                                            spotifyId = artistSpotifyId,
+                                        )
+                                    )
+                                }
+                                insert(AlbumArtistMap(albumId = albumId, artistId = artistId, order = index))
+                            }
+                        } else if (existing.inLibrary == null) {
+                            update(existing.copy(inLibrary = LocalDateTime.now()))
+                        }
+                        synced++
+                    }
+                    delay(DB_OPERATION_DELAY_MS)
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to sync Spotify album: ${spotifyAlbum.name}")
+                }
+            }
+
+            Timber.d("Synced $synced/${savedAlbums.size} Spotify saved albums")
+        } catch (e: Exception) {
+            Timber.e(e, "Error syncing Spotify saved albums")
         }
     }
 

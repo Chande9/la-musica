@@ -990,6 +990,46 @@ interface DatabaseDao {
     )
     fun albumsUploadedByPlayTimeAsc(): Flow<List<Album>>
 
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT * FROM album WHERE id LIKE 'spotify:%' ORDER BY rowId")
+    fun albumsSpotifyByCreateDateAsc(): Flow<List<Album>>
+
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT * FROM album WHERE id LIKE 'spotify:%' ORDER BY title")
+    fun albumsSpotifyByNameAsc(): Flow<List<Album>>
+
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT * FROM album WHERE id LIKE 'spotify:%' ORDER BY year")
+    fun albumsSpotifyByYearAsc(): Flow<List<Album>>
+
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT * FROM album WHERE id LIKE 'spotify:%' ORDER BY songCount")
+    fun albumsSpotifyBySongCountAsc(): Flow<List<Album>>
+
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query("SELECT * FROM album WHERE id LIKE 'spotify:%' ORDER BY duration")
+    fun albumsSpotifyByLengthAsc(): Flow<List<Album>>
+
+    @Transaction
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Query(
+        """
+        SELECT album.*
+        FROM album
+                 JOIN song
+                      ON song.albumId = album.id
+        WHERE album.id LIKE 'spotify:%'
+        GROUP BY album.id
+        ORDER BY SUM(song.totalPlayTime)
+    """
+    )
+    fun albumsSpotifyByPlayTimeAsc(): Flow<List<Album>>
+
     fun albums(
         sortType: AlbumSortType,
         descending: Boolean,
@@ -1065,10 +1105,38 @@ interface DatabaseDao {
         AlbumSortType.PLAY_TIME -> albumsUploadedByPlayTimeAsc()
     }.map { it.reversed(descending) }
 
+    fun albumsSpotify(
+        sortType: AlbumSortType,
+        descending: Boolean,
+    ) = when (sortType) {
+        AlbumSortType.CREATE_DATE -> albumsSpotifyByCreateDateAsc()
+        AlbumSortType.NAME ->
+            albumsSpotifyByNameAsc().map { albums ->
+                val collator = Collator.getInstance(Locale.getDefault())
+                collator.strength = Collator.PRIMARY
+                albums.sortedWith(compareBy(collator) { it.album.title })
+            }
+
+        AlbumSortType.ARTIST ->
+            albumsSpotifyByCreateDateAsc().map { albums ->
+                val collator = Collator.getInstance(Locale.getDefault())
+                collator.strength = Collator.PRIMARY
+                albums.sortedWith(compareBy(collator) { album -> album.artists.joinToString("") { it.name } })
+            }
+
+        AlbumSortType.YEAR -> albumsSpotifyByYearAsc()
+        AlbumSortType.SONG_COUNT -> albumsSpotifyBySongCountAsc()
+        AlbumSortType.LENGTH -> albumsSpotifyByLengthAsc()
+        AlbumSortType.PLAY_TIME -> albumsSpotifyByPlayTimeAsc()
+    }.map { it.reversed(descending) }
+
     @Transaction
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Query("SELECT * FROM album WHERE id = :id")
     fun album(id: String): Flow<Album?>
+
+    @Query("SELECT * FROM album WHERE id = :id LIMIT 1")
+    fun getAlbumEntityById(id: String): AlbumEntity?
 
     @Transaction
     @Query("SELECT * FROM album WHERE id = :albumId")

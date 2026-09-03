@@ -240,6 +240,7 @@ val QobuzSquidEndpointKey = stringPreferencesKey("qobuzSquidEndpoint")
 val QobuzKennyEndpointKey = stringPreferencesKey("qobuzKennyEndpoint")
 val QobuzTryptEndpointKey = stringPreferencesKey("qobuzTryptEndpoint")
 val QobuzJumoEndpointKey = stringPreferencesKey("qobuzJumoEndpoint")
+val SpotiflacProxyEndpointKey = stringPreferencesKey("spotiflacProxyEndpoint")
 
 enum class QobuzAudioQuality {
     AAC_320,
@@ -348,6 +349,7 @@ enum class AlbumFilter {
     LIBRARY,
     LIKED,
     UPLOADED,
+    SPOTIFY,
 }
 
 enum class PodcastFilter {

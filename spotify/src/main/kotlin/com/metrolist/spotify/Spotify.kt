@@ -754,6 +754,77 @@ object Spotify {
             )
         }
 
+    // ── Saved albums (GQL: libraryV3, filter "Albums") ─────────────────
+    // Mirrors myArtists(): the libraryV3 GQL endpoint pages through the
+    // user's saved albums. The items come wrapped in AlbumResponseWrapper
+    // with the same shape as search results, so parseGqlSearchAlbum is
+    // reused directly.
+
+    suspend fun myAlbums(
+        limit: Int = 50,
+        offset: Int = 0,
+    ): Result<SpotifyPaging<SpotifyAlbum>> =
+        runCatching {
+            val vars =
+                buildJsonObject {
+                    putJsonArray("filters") { add("Albums") }
+                    put("order", null as String?)
+                    put("textFilter", "")
+                    putJsonArray("features") {
+                        add("LIKED_SONGS")
+                        add("YOUR_EPISODES_V2")
+                        add("PRERELEASES")
+                        add("EVENTS")
+                    }
+                    put("limit", limit)
+                    put("offset", offset)
+                    put("flatten", false)
+                    putJsonArray("expandedFolders") {}
+                    put("folderUri", null as String?)
+                    put("includeFoldersWhenFlattening", true)
+                }
+
+            val response =
+                graphqlPost(
+                    operationName = "libraryV3",
+                    variables = vars,
+                )
+
+            val libraryData =
+                response.obj("data")?.obj("me")?.obj("libraryV3")
+                    ?: throw SpotifyException(500, "Invalid libraryV3 response")
+
+            val totalCount = libraryData.int("totalCount") ?: 0
+            val pagingInfo = libraryData.obj("pagingInfo")
+
+            val albums =
+                libraryData.arr("items")?.mapNotNull { itemElem ->
+                    val wrapper = itemElem.jsonObject.obj("item") ?: return@mapNotNull null
+                    val typeName = wrapper.str("__typename") ?: ""
+                    if (!typeName.contains("Album", ignoreCase = true)) return@mapNotNull null
+                    val data = wrapper.obj("data") ?: return@mapNotNull null
+                    if (data.str("__typename") != "Album") return@mapNotNull null
+                    // libraryV3 wraps the URI in the wrapper (_uri), not in data —
+                    // same shape as myArtists(). parseGqlSearchAlbum reads data.uri
+                    // (search shape), so patch the id/uri when it comes up blank.
+                    val albumUri = wrapper.str("_uri") ?: data.str("uri") ?: return@mapNotNull null
+                    parseGqlSearchAlbum(data).let { album ->
+                        if (album.id.isBlank()) {
+                            album.copy(id = albumUri.substringAfterLast(":"), uri = albumUri)
+                        } else {
+                            album
+                        }
+                    }
+                } ?: emptyList()
+
+            SpotifyPaging(
+                items = albums,
+                total = totalCount,
+                limit = pagingInfo?.int("limit") ?: limit,
+                offset = pagingInfo?.int("offset") ?: offset,
+            )
+        }
+
     // ── Playlist detail (GQL: fetchPlaylist) ────────────────────────────
 
     suspend fun playlist(playlistId: String): Result<SpotifyPlaylist> =

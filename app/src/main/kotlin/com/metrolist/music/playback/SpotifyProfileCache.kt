@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.utils.dataStore
 import com.metrolist.spotify.Spotify
+import com.metrolist.spotify.models.SpotifyAlbum
 import com.metrolist.spotify.models.SpotifyArtist
 import com.metrolist.spotify.models.SpotifyImage
 import com.metrolist.spotify.models.SpotifyTrack
@@ -63,6 +64,8 @@ object SpotifyProfileCache {
     private val CACHE_KEY_HAD_REST = booleanPreferencesKey("spotify_profile_had_rest")
     private val CACHE_KEY_FOLLOWED_ARTISTS = stringPreferencesKey("spotify_followed_artists_json")
     private val CACHE_KEY_FOLLOWED_TS = longPreferencesKey("spotify_followed_artists_ts")
+    private val CACHE_KEY_SAVED_ALBUMS = stringPreferencesKey("spotify_saved_albums_json")
+    private val CACHE_KEY_SAVED_ALBUMS_TS = longPreferencesKey("spotify_saved_albums_ts")
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val refreshMutex = Mutex()
@@ -86,6 +89,10 @@ object SpotifyProfileCache {
     @Volatile private var followedArtistsRefreshMs: Long = 0L
     private val followedArtistsMutex = Mutex()
 
+    @Volatile private var cachedSavedAlbums: List<SpotifyAlbum> = emptyList()
+    @Volatile private var savedAlbumsRefreshMs: Long = 0L
+    private val savedAlbumsMutex = Mutex()
+
     @Volatile private var cachedRelatedArtistNames: Set<String> = emptySet()
     @Volatile private var relatedArtistsRefreshMs: Long = 0L
     private val relatedArtistsMutex = Mutex()
@@ -95,6 +102,9 @@ object SpotifyProfileCache {
 
     @Serializable
     private data class CachedArtistList(val artists: List<SpotifyArtist>)
+
+    @Serializable
+    private data class CachedAlbumList(val albums: List<SpotifyAlbum>)
 
     /**
      * Returns top tracks from the best available source.
@@ -178,6 +188,87 @@ object SpotifyProfileCache {
             }
         }
         return cachedFollowedArtists.take(limit)
+    }
+
+    /**
+     * Returns the user's saved albums from Spotify via GQL libraryV3
+     * (filter "Albums"). Same 3-tier pattern as followed artists:
+     * in-memory TTL cache → DataStore restore → GQL paging.
+     */
+    suspend fun getSavedAlbums(
+        context: Context,
+        limit: Int = 500,
+    ): List<SpotifyAlbum> {
+        if (System.currentTimeMillis() - savedAlbumsRefreshMs < FOLLOWED_ARTISTS_TTL_MS &&
+            cachedSavedAlbums.isNotEmpty()
+        ) return cachedSavedAlbums.take(limit)
+
+        savedAlbumsMutex.withLock {
+            if (System.currentTimeMillis() - savedAlbumsRefreshMs < FOLLOWED_ARTISTS_TTL_MS &&
+                cachedSavedAlbums.isNotEmpty()
+            ) return cachedSavedAlbums.take(limit)
+
+            if (cachedSavedAlbums.isEmpty()) {
+                restoreSavedAlbumsFromDataStore(context)
+                if (System.currentTimeMillis() - savedAlbumsRefreshMs < FOLLOWED_ARTISTS_TTL_MS &&
+                    cachedSavedAlbums.isNotEmpty()
+                ) return cachedSavedAlbums.take(limit)
+            }
+
+            try {
+                val allAlbums = mutableListOf<SpotifyAlbum>()
+                var offset = 0
+                val pageSize = 50
+                do {
+                    val result = withContext(Dispatchers.IO) {
+                        Spotify.myAlbums(limit = pageSize, offset = offset)
+                    }
+                    val paging = result.getOrNull() ?: break
+                    allAlbums.addAll(paging.items)
+                    offset += pageSize
+                } while (allAlbums.size < paging.total && paging.items.isNotEmpty())
+
+                if (allAlbums.isNotEmpty()) {
+                    cachedSavedAlbums = allAlbums
+                    savedAlbumsRefreshMs = System.currentTimeMillis()
+                    persistSavedAlbumsToDataStore(context)
+                    Timber.d("$TAG: Saved albums loaded — ${allAlbums.size} albums from GQL")
+                } else {
+                    Timber.w("$TAG: GQL myAlbums returned empty")
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "$TAG: GQL myAlbums failed")
+            }
+        }
+        return cachedSavedAlbums.take(limit)
+    }
+
+    private suspend fun persistSavedAlbumsToDataStore(context: Context) {
+        try {
+            val albumsJson = json.encodeToString(CachedAlbumList(cachedSavedAlbums.take(200)))
+            context.dataStore.edit { prefs ->
+                prefs[CACHE_KEY_SAVED_ALBUMS] = albumsJson
+                prefs[CACHE_KEY_SAVED_ALBUMS_TS] = System.currentTimeMillis()
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "$TAG: Failed to persist saved albums")
+        }
+    }
+
+    private suspend fun restoreSavedAlbumsFromDataStore(context: Context) {
+        try {
+            val prefs = context.dataStore.data.first()
+            val albumsJson = prefs[CACHE_KEY_SAVED_ALBUMS] ?: return
+            val timestamp = prefs[CACHE_KEY_SAVED_ALBUMS_TS] ?: 0L
+            val parsed = json.decodeFromString<CachedAlbumList>(albumsJson)
+            if (parsed.albums.isNotEmpty()) {
+                cachedSavedAlbums = parsed.albums
+                savedAlbumsRefreshMs = timestamp
+                Timber.d("$TAG: Restored saved albums from DataStore — ${parsed.albums.size} albums (age: ${(System.currentTimeMillis() - timestamp) / 60000}min)")
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "$TAG: Failed to restore saved albums from DataStore")
+        }
     }
 
     private suspend fun persistFollowedArtistsToDataStore(context: Context) {

@@ -62,6 +62,7 @@ import com.metrolist.music.constants.QobuzCountryKey
 import com.metrolist.music.constants.QobuzJumoEndpointKey
 import com.metrolist.music.constants.QobuzKennyEndpointKey
 import com.metrolist.music.constants.QobuzSquidEndpointKey
+import com.metrolist.music.constants.SpotiflacProxyEndpointKey
 import com.metrolist.music.constants.QobuzTryptEndpointKey
 import com.metrolist.music.constants.SpotifyAccessTokenKey
 import com.metrolist.music.constants.SpotifySpDcKey
@@ -484,6 +485,7 @@ fun SpotifySettings(
                 QobuzEndpointEntry(QobuzKennyEndpointKey, stringResource(R.string.qobuz_endpoint_kenny))
                 QobuzEndpointEntry(QobuzTryptEndpointKey, stringResource(R.string.qobuz_endpoint_trypt))
                 QobuzEndpointEntry(QobuzJumoEndpointKey, stringResource(R.string.qobuz_endpoint_jumo))
+                QobuzEndpointEntry(SpotiflacProxyEndpointKey, stringResource(R.string.qobuz_endpoint_spotiflac))
 
                 QobuzBackendHealthSection(currentBackend = qobuzBackend)
             }

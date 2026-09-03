@@ -560,6 +560,7 @@
     <string name="qobuz_endpoint_kenny">Monokenny endpoint</string>
     <string name="qobuz_endpoint_trypt">TrypT endpoint</string>
     <string name="qobuz_endpoint_jumo">Jumo endpoint</string>
+    <string name="qobuz_endpoint_spotiflac">SpotiFLAC proxy endpoint</string>
     <string name="qobuz_endpoint_default">Default</string>
     <string name="qobuz_endpoint_hint">https://example.com (blank = default)</string>
 

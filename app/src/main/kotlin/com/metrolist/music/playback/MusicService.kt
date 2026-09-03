@@ -101,11 +101,13 @@ import com.metrolist.music.constants.QobuzJumoEndpointKey
 import com.metrolist.music.constants.QobuzKennyEndpointKey
 import com.metrolist.music.constants.QobuzMatchOverridesKey
 import com.metrolist.music.constants.QobuzSquidEndpointKey
+import com.metrolist.music.constants.SpotiflacProxyEndpointKey
 import com.metrolist.music.constants.QobuzTryptEndpointKey
 import com.metrolist.music.qobuz.QobuzAudioProvider
 import com.metrolist.music.qobuz.amz.AmzResolver
 import com.metrolist.music.qobuz.arcod.ArcodResolver
 import com.metrolist.music.qobuz.arcod.ArcodSessionManager
+import com.metrolist.music.qobuz.spotiflac.SpotiflacResolver
 import com.metrolist.music.qobuz.QobuzMatchOverride
 import com.metrolist.music.qobuz.QobuzMatchOverrides
 import com.metrolist.spotify.models.SpotifyTrack
@@ -3932,31 +3934,36 @@ class MusicService :
                         }
                     }
 
-                    // Grey-Zone cascade: amz.squid.wtf (Amazon Music proxy) + arcod.xyz
+                    // Grey-Zone cascade: SpotiFLAC proxy (Qobuz FLAC 16/24-bit,
+                    // local PC) → amz.squid.wtf (Amazon Music proxy) → arcod.xyz
                     // (Qobux proxy, job-render pipeline). Only reached when every
                     // legit-mirror backend failed and the user explicitly consented
                     // in Settings → Grey Zone.
                     if (qobuzResolved == null && greyZoneOk) {
-                        // arcod first: open Range-capable FLAC, no CENC — verified E2E.
+                        // SpotiFLAC first: the live FLAC source (arcod's Qobuz pool
+                        // is dead server-side as of 3sep2026). 15s cap — the proxy
+                        // answers in <2s on LAN; a miss must not delay the cascade.
                         qobuzResolved = runCatching {
                             runBlocking(Dispatchers.IO) {
-                                withTimeout(95_000L) {
-                                    ArcodResolver.resolve(
+                                withTimeout(15_000L) {
+                                    SpotiflacResolver.resolve(
                                         mediaId = mediaId,
                                         title = qobuzQuery.title,
                                         artist = qobuzQuery.artists.firstOrNull() ?: "",
                                         album = qobuzQuery.album,
                                         isrc = qobuzQuery.isrc,
+                                        endpoint = dataStore.get(SpotiflacProxyEndpointKey, ""),
+                                        hires = effectiveQuery.qualityCode >= 27,
                                     )
                                 }
                             }
                         }.onFailure { e ->
-                            val reason = if (e is TimeoutCancellationException) "timed out after 95s"
+                            val reason = if (e is TimeoutCancellationException) "timed out after 15s"
                             else e.message ?: e.javaClass.simpleName
-                            Timber.tag("Qobuz").d("arcod ✘ %s: %s", mediaId, reason)
+                            Timber.tag("Qobuz").d("spotiflac ✘ %s: %s", mediaId, reason)
                         }.getOrNull()
                         if (qobuzResolved != null) {
-                            Timber.tag("Qobuz").i("arcod ✔ %s → %s", mediaId, qobuzResolved.trackId)
+                            Timber.tag("Qobuz").i("spotiflac ✔ %s → %s", mediaId, qobuzResolved.trackId)
                         }
                     }
 
@@ -3980,6 +3987,32 @@ class MusicService :
                         }.getOrNull()
                         if (qobuzResolved != null) {
                             Timber.tag("Qobuz").i("amz ✔ %s → %s (asin=%s)", mediaId, qobuzResolved.label, qobuzResolved.trackId)
+                        }
+                    }
+
+                    if (qobuzResolved == null && greyZoneOk) {
+                        // arcod last: its Qobuz pool is dead server-side (3sep2026)
+                        // and its job pipeline can take up to 95s — keep it as the
+                        // slow last resort in case the pool comes back.
+                        qobuzResolved = runCatching {
+                            runBlocking(Dispatchers.IO) {
+                                withTimeout(95_000L) {
+                                    ArcodResolver.resolve(
+                                        mediaId = mediaId,
+                                        title = qobuzQuery.title,
+                                        artist = qobuzQuery.artists.firstOrNull() ?: "",
+                                        album = qobuzQuery.album,
+                                        isrc = qobuzQuery.isrc,
+                                    )
+                                }
+                            }
+                        }.onFailure { e ->
+                            val reason = if (e is TimeoutCancellationException) "timed out after 95s"
+                            else e.message ?: e.javaClass.simpleName
+                            Timber.tag("Qobuz").d("arcod ✘ %s: %s", mediaId, reason)
+                        }.getOrNull()
+                        if (qobuzResolved != null) {
+                            Timber.tag("Qobuz").i("arcod ✔ %s → %s", mediaId, qobuzResolved.trackId)
                         }
                     }
 

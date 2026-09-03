@@ -244,11 +244,15 @@ constructor(
                     AlbumFilter.LIKED -> database.albumsLiked(sortType, descending).map { it.filterExplicitAlbums(hideExplicit) }
                     AlbumFilter.LIBRARY -> database.albums(sortType, descending).map { it.filterExplicitAlbums(hideExplicit) }
                     AlbumFilter.UPLOADED -> database.albumsUploaded(sortType, descending).map { it.filterExplicitAlbums(hideExplicit) }
+                    AlbumFilter.SPOTIFY -> database.albumsSpotify(sortType, descending).map { it.filterExplicitAlbums(hideExplicit) }
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun sync() {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedAlbums() }
+        viewModelScope.launch(Dispatchers.IO) {
+            syncUtils.syncLikedAlbums()
+            syncUtils.syncSpotifySavedAlbums()
+        }
     }
 
     init {
@@ -256,7 +260,7 @@ constructor(
             allAlbums.collect { albums ->
                 albums
                     .filter {
-                        it.album.songCount == 0
+                        it.album.songCount == 0 && !it.album.id.startsWith("spotify:")
                     }.forEach { album ->
                         YouTube
                             .album(album.id)
